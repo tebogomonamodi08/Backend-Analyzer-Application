@@ -1,28 +1,25 @@
 from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import FastAPI, Header
-from starlette.requests import Request 
-from starlette.responses import Response
-import time
+from starlette.requests import Request
+from fastapi import FastAPI
+
 
 class LogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        #Preprocessing
-        start_time = time.perf_counter()
-        log = {'method':request.method,
-               'url':str(request.url)
-               }
-    
+        #preprocess logic 
+        client_ip = request.client.host
+        
         response = await call_next(request)
-        #post processing
-        duration = round(time.perf_counter()-start_time,3)
-        log['duration'] = duration
-        print(log)
+        status_code = response.status_code
+
+        with open('log.txt','a') as file_obj:
+            file_obj.write(f'Client IP Adress: {client_ip}, Status code: {status_code}')
         return response
+        #postprocess logic
+
 
 app = FastAPI()
+app.add_middleware(LogMiddleware)
 
 @app.get('/')
-async def get_this(token: str = Header(...)):
-    return {token}
-
-
+async def get_this():
+    return 'A file should be make'
